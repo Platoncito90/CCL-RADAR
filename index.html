@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCL RADAR v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050810;
+  --bg2: #080d1a;
+  --panel: #0a1020;
+  --border: #0f2a4a;
+  --accent: #00d4ff;
+  --accent2: #ff6b35;
+  --accent3: #00ff88;
+  --warn: #ffcc00;
+  --danger: #ff3355;
+  --text: #c8e0f0;
+  --muted: #4a6a8a;
+  --glow: 0 0 12px rgba(0,212,255,0.4);
+  --glow2: 0 0 12px rgba(255,107,53,0.4);
+  --glow3: 0 0 12px rgba(0,255,136,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.container { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+
+/* HEADER */
+header { text-align: center; margin-bottom: 28px; }
+.logo { font-family: 'Orbitron', monospace; font-size: 2rem; font-weight: 900; color: var(--accent); text-shadow: var(--glow), 0 0 40px rgba(0,212,255,0.2); letter-spacing: 4px; }
+.logo span { color: var(--accent2); text-shadow: var(--glow2); }
+.logo small { font-size: 0.6rem; color: var(--muted); vertical-align: super; margin-left: 4px; }
+.subtitle { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--muted); letter-spacing: 3px; margin-top: 4px; }
+.scan-line { height: 1px; background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent); margin: 14px 0; animation: scanPulse 3s ease-in-out infinite; }
+@keyframes scanPulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+/* ALERT BANNER */
+.alert-banner {
+  display: none;
+  background: rgba(255,51,85,0.12);
+  border: 1px solid var(--danger);
+  border-left: 4px solid var(--danger);
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--danger);
+  letter-spacing: 1px;
+  animation: alertPulse 1.5s ease-in-out infinite;
+}
+@keyframes alertPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+/* CCL PANEL */
+.ccl-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto auto;
+  gap: 14px;
+  align-items: end;
+  box-shadow: 0 0 30px rgba(0,212,255,0.05);
+}
+.field-group { display: flex; flex-direction: column; gap: 5px; }
+label { font-family: 'Share Tech Mono', monospace; font-size: 0.62rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+input[type="number"], input[type="text"], select {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1rem;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+input:focus, select:focus { border-color: var(--accent); box-shadow: var(--glow); }
+select { color: var(--text); font-size: 0.82rem; cursor: pointer; }
+select option { background: var(--bg2); }
+
+.btn {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn:hover { background: rgba(0,212,255,0.1); box-shadow: var(--glow); }
+.btn-green { border-color: var(--accent3); color: var(--accent3); }
+.btn-green:hover { background: rgba(0,255,136,0.1); box-shadow: var(--glow3); }
+.btn-orange { border-color: var(--accent2); color: var(--accent2); }
+.btn-orange:hover { background: rgba(255,107,53,0.1); box-shadow: var(--glow2); }
+.btn-red { border-color: var(--danger); color: var(--danger); }
+.btn-red:hover { background: rgba(255,51,85,0.1); }
+
+/* TOOLBAR */
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+.toolbar-right { margin-left: auto; display: flex; gap: 10px; }
+
+/* TAB NAV */
+.tabs { display: flex; gap: 0; margin-bottom: 0; border-bottom: 1px solid var(--border); }
+.tab {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 10px 20px;
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* RESULTS TABLE */
+.table-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--border); border-top: none; }
+table { width: 100%; border-collapse: collapse; font-family: 'Share Tech Mono', monospace; }
+thead th {
+  font-size: 0.58rem; letter-spacing: 2px; color: var(--muted);
+  text-align: right; padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  background: var(--bg2);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+thead th:first-child { text-align: left; }
+thead th:hover { color: var(--accent); }
+thead th.sorted { color: var(--accent); }
+
+tbody tr { border-bottom: 1px solid rgba(15,42,74,0.5); transition: background 0.15s; }
+tbody tr:hover { background: rgba(0,212,255,0.04); }
+tbody tr.alert-row { background: rgba(255,51,85,0.05); }
+tbody td { padding: 11px 12px; font-size: 0.82rem; text-align: right; }
+tbody td:first-child { text-align: left; }
+
+.ticker { font-family: 'Orbitron', monospace; font-size: 0.72rem; font-weight: 700; color: var(--accent); }
+.company-name { font-family: 'Rajdhani', sans-serif; font-size: 0.68rem; color: var(--muted); display: block; margin-top: 1px; }
+.sector-tag { font-size: 0.55rem; color: var(--muted); background: rgba(15,42,74,0.8); padding: 1px 5px; display: inline-block; margin-top: 2px; }
+.val { color: var(--text); }
+.teorico { color: var(--warn); font-weight: 600; }
+.gap-pos { color: var(--accent3); }
+.gap-neg { color: var(--danger); }
+.gap-neu { color: var(--muted); }
+.ccl-impl { color: var(--accent2); }
+
+.signal { display: inline-block; font-size: 0.58rem; font-family: 'Orbitron', monospace; font-weight: 700; letter-spacing: 1px; padding: 3px 7px; border: 1px solid; }
+.signal-buy { color: var(--accent3); border-color: var(--accent3); background: rgba(0,255,136,0.08); }
+.signal-sell { color: var(--danger); border-color: var(--danger); background: rgba(255,51,85,0.08); }
+.signal-fair { color: var(--warn); border-color: var(--warn); background: rgba(255,204,0,0.08); }
+
+.del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; padding: 4px 8px; transition: color 0.2s; }
+.del-btn:hover { color: var(--danger); }
+
+/* ADD FORM */
+.add-form {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent3);
+  padding: 16px 20px;
+  margin-top: 14px;
+  display: none;
+  grid-template-columns: 1fr 1.5fr 1fr 0.7fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+.add-form.open { display: grid; }
+.ratio-hint { font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: var(--muted); margin-top: 3px; }
+
+/* SUMMARY STRIP */
+.summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 16px; }
+.stat-box { background: var(--panel); border: 1px solid var(--border); padding: 12px 14px; text-align: center; }
+.stat-label { font-family: 'Share Tech Mono', monospace; font-size: 0.53rem; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+.stat-value { font-family: 'Orbitron', monospace; font-size: 1rem; font-weight: 700; }
+.cyan { color: var(--accent); text-shadow: var(--glow); }
+.orange { color: var(--accent2); text-shadow: var(--glow2); }
+.green { color: var(--accent3); text-shadow: var(--glow3); }
+.yellow { color: var(--warn); }
+.red { color: var(--danger); }
+
+/* CHART */
+.chart-container { background: var(--panel); border: 1px solid var(--border); border-top: none; padding: 24px 20px; min-height: 280px; }
+.chart-title { font-family: 'Orbitron', monospace; font-size: 0.65rem; color: var(--muted); letter-spacing: 3px; margin-bottom: 20px; }
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: flex; align-items: center; gap: 10px; }
+.bar-label { font-family: 'Orbitron', monospace; font-size: 0.65rem; color: var(--accent); width: 60px; flex-shrink: 0; text-align: right; }
+.bar-track { flex: 1; height: 22px; background: var(--bg2); border: 1px solid var(--border); position: relative; overflow: visible; }
+.bar-fill { height: 100%; transition: width 0.4s ease; position: relative; }
+.bar-zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--muted); }
+.bar-val { font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; width: 70px; flex-shrink: 0; }
+.chart-empty { text-align: center; padding: 40px; color: var(--muted); font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; letter-spacing: 2px; }
+
+/* HISTORY */
+.history-container { background: var(--panel); border: 1px solid var(--border); border-top: none; padding: 20px; }
+.history-entry {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: start;
+}
+.history-ts { font-family: 'Share Tech Mono', monospace; font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+.history-ccl { font-family: 'Orbitron', monospace; font-size: 0.7rem; color: var(--accent); }
+.history-items { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.history-chip {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.history-chip.chip-buy { border-color: var(--accent3); color: var(--accent3); }
+.history-chip.chip-sell { border-color: var(--danger); color: var(--danger); }
+.history-empty { text-align: center; padding: 40px; color: var(--muted); font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; letter-spacing: 2px; }
+.history-clear-btn { font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: var(--danger); cursor: pointer; background: none; border: none; }
+.history-clear-btn:hover { text-decoration: underline; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 40px; color: var(--muted); font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; letter-spacing: 2px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .ccl-panel { grid-template-columns: 1fr 1fr; }
+  .add-form { grid-template-columns: 1fr 1fr 1fr; }
+  .summary { grid-template-columns: 1fr 1fr; }
+  .logo { font-size: 1.4rem; }
+  table { font-size: 0.72rem; }
+  tbody td, thead th { padding: 8px 6px; }
+  .toolbar { flex-direction: column; align-items: flex-start; }
+  .toolbar-right { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div class="logo">CCL <span>RADAR</span><small>v2</small></div>
+  <div class="subtitle">ADR · CEDEAR · VALOR TEÓRICO · CCL IMPLÍCITO · ALERTAS · HISTORIAL</div>
+  <div class="scan-line"></div>
+</header>
+
+<!-- ALERT BANNER -->
+<div class="alert-banner" id="alertBanner">⚠ ALERTA: Instrumentos con gap superior al umbral detectados →&nbsp;<span id="alertTickers"></span></div>
+
+<!-- CCL PANEL -->
+<div class="ccl-panel">
+  <div class="field-group">
+    <label>💱 CCL (ARS / USD)</label>
+    <input type="number" id="ccl" value="1486" step="0.5" oninput="recalcAll()">
+  </div>
+  <div class="field-group">
+    <label>Umbral gap señal (%)</label>
+    <input type="number" id="threshold" value="2" step="0.5" min="0" oninput="recalcAll()">
+  </div>
+  <div class="field-group">
+    <label>Ordenar por</label>
+    <select id="sortBy" onchange="recalcAll()">
+      <option value="ticker">Ticker</option>
+      <option value="gap">Gap %</option>
+      <option value="ccl_impl">CCL Implícito</option>
+      <option value="teorico">Teórico ARS</option>
+    </select>
+  </div>
+  <button class="btn" onclick="saveToHistory()">💾 GUARDAR SNAPSHOT</button>
+  <button class="btn btn-orange" onclick="exportCSV()">⬇ EXPORTAR CSV</button>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="btn btn-green" onclick="toggleAddForm()">+ AGREGAR</button>
+  <button class="btn" onclick="loadPreset('bancos')">★ BANCOS AR</button>
+  <button class="btn" onclick="loadPreset('energia')">★ ENERGÍA AR</button>
+  <button class="btn" onclick="loadPreset('tech')">★ TECH US</button>
+  <button class="btn" onclick="loadPreset('all')">★ PRESET COMPLETO</button>
+  <div class="toolbar-right">
+    <button class="btn btn-red" onclick="clearAll()">✕ LIMPIAR</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('tabla', this)">■ TABLA</button>
+  <button class="tab" onclick="switchTab('grafico', this)">▦ GRÁFICO GAP</button>
+  <button class="tab" onclick="switchTab('historial', this)">◎ HISTORIAL</button>
+</div>
+
+<!-- TAB: TABLA -->
+<div class="tab-content active" id="tab-tabla">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="setSortAndRender('ticker')">TICKER ↕</th>
+          <th onclick="setSortAndRender('adr')">ADR USD ↕</th>
+          <th>RATIO</th>
+          <th onclick="setSortAndRender('local')">LOCAL ARS ↕</th>
+          <th onclick="setSortAndRender('teorico')">TEÓRICO ARS ↕</th>
+          <th onclick="setSortAndRender('gap')">GAP % ↕</th>
+          <th onclick="setSortAndRender('ccl_impl')">CCL IMPL. ↕</th>
+          <th>SEÑAL</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty">— AGREGAR INSTRUMENTOS O CARGAR UN PRESET —</div>
+  </div>
+</div>
+
+<!-- TAB: GRÁFICO -->
+<div class="tab-content" id="tab-grafico">
+  <div class="chart-container">
+    <div class="chart-title">■ GAP % · LOCAL vs TEÓRICO (+ = cara · - = barata)</div>
+    <div class="bar-chart" id="barChart">
+      <div class="chart-empty">— SIN DATOS —</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: HISTORIAL -->
+<div class="tab-content" id="tab-historial">
+  <div class="history-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div style="font-family:'Orbitron',monospace; font-size:0.65rem; color:var(--muted); letter-spacing:3px;">■ SNAPSHOTS GUARDADOS</div>
+      <button class="history-clear-btn" onclick="clearHistory()">✕ BORRAR HISTORIAL</button>
+    </div>
+    <div id="historyList"><div class="history-empty">— GUARDÁ UN SNAPSHOT PARA VER EL HISTORIAL —</div></div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="summary">
+  <div class="stat-box">
+    <div class="stat-label">CCL ingresado</div>
+    <div class="stat-value cyan" id="sumCCL">—</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">CCL impl. prom.</div>
+    <div class="stat-value orange" id="sumImplicit">—</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">Gap promedio</div>
+    <div class="stat-value yellow" id="sumGap">—</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">Alertas activas</div>
+    <div class="stat-value red" id="sumAlerts">0</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">Instrumentos</div>
+    <div class="stat-value green" id="sumCount">0</div>
+  </div>
+</div>
+
+<!-- ADD FORM -->
+<div class="add-form" id="addForm">
+  <div class="field-group">
+    <label>Ticker</label>
+    <input type="text" id="newTicker" placeholder="GGAL" style="text-transform:uppercase">
+  </div>
+  <div class="field-group">
+    <label>Nombre</label>
+    <input type="text" id="newName" placeholder="Grupo Galicia">
+  </div>
+  <div class="field-group">
+    <label>ADR / NYSE (USD)</label>
+    <input type="number" id="newAdr" placeholder="44.74" step="0.01">
+  </div>
+  <div class="field-group">
+    <label>Ratio</label>
+    <input type="number" id="newRatio" value="10" step="1" min="1">
+    <div class="ratio-hint">GGAL/BMA/BBAR=10 · YPF=1 · PAM=25</div>
+  </div>
+  <div class="field-group">
+    <label>Precio Local ARS</label>
+    <input type="number" id="newLocal" placeholder="6350">
+  </div>
+  <button class="btn btn-green" onclick="addRowFromForm()">AGREGAR ▶</button>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────
+let rows = [];
+let nextId = 1;
+let history = JSON.parse(localStorage.getItem('cclHistory') || '[]');
+let sortKey = 'ticker';
+let sortDir = 1;
+
+// ─── PRESETS ──────────────────────────────────────────────────────────────
+const PRESETS = {
+  bancos: [
+    { ticker:'GGAL',  name:'Grupo Galicia',      adr:44.74, ratio:10, local:6350,  sector:'BANCO' },
+    { ticker:'BMA',   name:'Banco Macro',         adr:93.57, ratio:10, local:13800, sector:'BANCO' },
+    { ticker:'BBAR',  name:'BBVA Argentina',      adr:18.52, ratio:10, local:2750,  sector:'BANCO' },
+    { ticker:'SUPV',  name:'Grupo Supervielle',   adr: 8.86, ratio:10, local:1310,  sector:'BANCO' },
+    { ticker:'BHIP',  name:'Banco Hipotecario',   adr: null, ratio:10, local:420,   sector:'BANCO' },
+    { ticker:'BPAT',  name:'Banco Patagonia',     adr: null, ratio:10, local:980,   sector:'BANCO' },
+  ],
+  energia: [
+    { ticker:'YPF',   name:'YPF S.A.',            adr:27.50, ratio: 1, local:41000, sector:'ENERGÍA' },
+    { ticker:'PAM',   name:'Pampa Energía',        adr:62.00, ratio:25, local:3680,  sector:'ENERGÍA' },
+    { ticker:'CEPU',  name:'Central Puerto',       adr: 9.20, ratio:20, local:1210,  sector:'ENERGÍA' },
+    { ticker:'TGSU2', name:'TGS',                  adr:null,  ratio:20, local:3100,  sector:'GAS' },
+    { ticker:'TGNO4', name:'TGN',                  adr:null,  ratio:20, local:1540,  sector:'GAS' },
+    { ticker:'LOMA',  name:'Loma Negra',           adr:14.50, ratio:10, local:2150,  sector:'CEMENTO' },
+  ],
+  tech: [
+    { ticker:'MELI',  name:'MercadoLibre',         adr:2100,  ratio: 1, local:null,  sector:'TECH' },
+    { ticker:'GLOB',  name:'Globant',              adr:155,   ratio: 1, local:null,  sector:'TECH' },
+    { ticker:'DESP',  name:'Despegar',             adr:14.50, ratio: 1, local:null,  sector:'TURISMO' },
+    { ticker:'TECO2', name:'Telecom Argentina',    adr: 8.20, ratio: 5, local:2580,  sector:'TELECOM' },
+    { ticker:'COME',  name:'Sociedad Comercial',   adr:null,  ratio:10, local:310,   sector:'DIVERSIF.' },
+  ],
+};
+PRESETS.all = [...PRESETS.bancos, ...PRESETS.energia, ...PRESETS.tech];
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+const getCCL = () => parseFloat(document.getElementById('ccl').value) || 0;
+const getThreshold = () => parseFloat(document.getElementById('threshold').value) || 2;
+const fmt = (n, dec) => isNaN(n) || n === null ? '—' : Number(n).toLocaleString('es-AR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+
+function calcRow(r, ccl) {
+  const teorico = r.adr ? (r.adr / r.ratio) * ccl : null;
+  const hasLocal = r.local && r.local > 0;
+  const cclImpl = (hasLocal && r.adr) ? (r.adr * r.ratio) / r.local : null;
+  const gap = (hasLocal && teorico) ? ((r.local - teorico) / teorico) * 100 : null;
+  return { teorico, cclImpl, gap, hasLocal };
+}
+
+// ─── ADD ──────────────────────────────────────────────────────────────────
+function addRowFromForm() {
+  const ticker = document.getElementById('newTicker').value.toUpperCase().trim();
+  const name   = document.getElementById('newName').value.trim();
+  const adr    = parseFloat(document.getElementById('newAdr').value) || null;
+  const ratio  = parseFloat(document.getElementById('newRatio').value) || 10;
+  const local  = parseFloat(document.getElementById('newLocal').value) || null;
+  if (!ticker) { flashInput('newTicker'); return; }
+  rows.push({ id: nextId++, ticker, name, adr, ratio, local, sector: '' });
+  ['newTicker','newName','newAdr','newLocal'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('newRatio').value = '10';
+  recalcAll();
+}
+
+function flashInput(id) {
+  const el = document.getElementById(id);
+  el.style.borderColor = 'var(--danger)';
+  el.style.boxShadow = '0 0 8px rgba(255,51,85,0.5)';
+  setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1000);
+}
+
+function deleteRow(id) { rows = rows.filter(r => r.id !== id); recalcAll(); }
+
+// ─── PRESETS ──────────────────────────────────────────────────────────────
+function loadPreset(key) {
+  clearAll(false);
+  const preset = PRESETS[key] || [];
+  preset.forEach(p => {
+    if (!p.adr && !p.local) return;
+    rows.push({ id: nextId++, ...p });
+  });
+  recalcAll();
+  document.getElementById('addForm').classList.remove('open');
+}
+
+function clearAll(render = true) { rows = []; if (render) recalcAll(); }
+
+// ─── SORT ─────────────────────────────────────────────────────────────────
+function setSortAndRender(key) {
+  if (sortKey === key) sortDir *= -1;
+  else { sortKey = key; sortDir = 1; }
+  recalcAll();
+}
+
+function sortedRows(ccl) {
+  return [...rows].sort((a, b) => {
+    const ca = calcRow(a, ccl), cb = calcRow(b, ccl);
+    let va, vb;
+    switch(sortKey) {
+      case 'ticker':   va = a.ticker; vb = b.ticker; break;
+      case 'adr':      va = a.adr || 0; vb = b.adr || 0; break;
+      case 'local':    va = a.local || 0; vb = b.local || 0; break;
+      case 'teorico':  va = ca.teorico || 0; vb = cb.teorico || 0; break;
+      case 'gap':      va = ca.gap ?? -9999; vb = cb.gap ?? -9999; break;
+      case 'ccl_impl': va = ca.cclImpl || 0; vb = cb.cclImpl || 0; break;
+      default: va = a.ticker; vb = b.ticker;
+    }
+    if (typeof va === 'string') return va.localeCompare(vb) * sortDir;
+    return (va - vb) * sortDir;
+  });
+}
+
+// ─── MAIN RENDER ──────────────────────────────────────────────────────────
+function recalcAll() {
+  const ccl = getCCL();
+  const threshold = getThreshold();
+  const sorted = sortedRows(ccl);
+
+  // Summary
+  let implSum = 0, implCount = 0, gapSum = 0, gapCount = 0, alertCount = 0;
+  sorted.forEach(r => {
+    const { teorico, cclImpl, gap } = calcRow(r, ccl);
+    if (cclImpl) { implSum += cclImpl; implCount++; }
+    if (gap !== null) { gapSum += gap; gapCount++; if (Math.abs(gap) > threshold) alertCount++; }
+  });
+
+  document.getElementById('sumCCL').textContent = ccl > 0 ? fmt(ccl, 2) : '—';
+  document.getElementById('sumImplicit').textContent = implCount > 0 ? fmt(implSum / implCount, 2) : '—';
+  document.getElementById('sumGap').textContent = gapCount > 0 ? (gapSum/gapCount >= 0 ? '+' : '') + fmt(gapSum/gapCount, 2) + '%' : '—';
+  document.getElementById('sumAlerts').textContent = alertCount;
+  document.getElementById('sumCount').textContent = rows.length;
+
+  // Alert banner
+  const alertTickers = sorted.filter(r => {
+    const { gap } = calcRow(r, ccl);
+    return gap !== null && Math.abs(gap) > threshold;
+  }).map(r => r.ticker).join(', ');
+  const banner = document.getElementById('alertBanner');
+  if (alertCount > 0) {
+    banner.style.display = 'block';
+    document.getElementById('alertTickers').textContent = alertTickers;
+  } else {
+    banner.style.display = 'none';
+  }
+
+  renderTable(sorted, ccl, threshold);
+  renderChart(sorted, ccl, threshold);
+}
+
+function renderTable(sorted, ccl, threshold) {
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = sorted.map(r => {
+    const { teorico, cclImpl, gap, hasLocal } = calcRow(r, ccl);
+    const isAlert = gap !== null && Math.abs(gap) > threshold;
+    const gapClass = gap === null ? 'gap-neu' : gap > threshold ? 'gap-neg' : gap < -threshold ? 'gap-pos' : 'gap-neu';
+    const gapArrow = gap === null ? '' : gap > 0 ? '▲' : '▼';
+    let signal = '';
+    if (gap !== null) {
+      if (gap > threshold) signal = `<span class="signal signal-sell">CARA</span>`;
+      else if (gap < -threshold) signal = `<span class="signal signal-buy">BARATA</span>`;
+      else signal = `<span class="signal signal-fair">PARIDAD</span>`;
+    }
+    return `
+      <tr${isAlert ? ' class="alert-row"' : ''}>
+        <td>
+          <span class="ticker">${r.ticker}</span>
+          <span class="company-name">${r.name || ''}</span>
+          ${r.sector ? `<span class="sector-tag">${r.sector}</span>` : ''}
+        </td>
+        <td class="val">${r.adr ? '$'+fmt(r.adr,2) : '<span style="color:var(--muted)">—</span>'}</td>
+        <td class="val">${r.ratio}:1</td>
+        <td class="val">${hasLocal ? '$'+fmt(r.local,0) : '<span style="color:var(--muted)">—</span>'}</td>
+        <td class="teorico">${teorico ? '$'+fmt(teorico,0) : '<span style="color:var(--muted)">—</span>'}</td>
+        <td class="${gapClass}">${gap !== null ? gapArrow+' '+fmt(Math.abs(gap),2)+'%' : '<span style="color:var(--muted)">—</span>'}</td>
+        <td class="ccl-impl">${cclImpl ? fmt(cclImpl,2) : '<span style="color:var(--muted)">—</span>'}</td>
+        <td>${signal}</td>
+        <td><button class="del-btn" onclick="deleteRow(${r.id})">✕</button></td>
+      </tr>`;
+  }).join('');
+}
+
+// ─── CHART ────────────────────────────────────────────────────────────────
+function renderChart(sorted, ccl, threshold) {
+  const chart = document.getElementById('barChart');
+  const dataRows = sorted.filter(r => calcRow(r, ccl).gap !== null);
+  if (dataRows.length === 0) {
+    chart.innerHTML = '<div class="chart-empty">— SIN DATOS CON PRECIO LOCAL —</div>';
+    return;
+  }
+
+  const gaps = dataRows.map(r => calcRow(r, ccl).gap);
+  const maxAbs = Math.max(...gaps.map(Math.abs), threshold, 1);
+
+  chart.innerHTML = dataRows.map(r => {
+    const { gap } = calcRow(r, ccl);
+    const pct = (Math.abs(gap) / maxAbs) * 45; // max 45% of track
+    const isPos = gap > 0;
+    const color = Math.abs(gap) > threshold ? (isPos ? 'var(--danger)' : 'var(--accent3)') : 'var(--warn)';
+    const zeroPos = 50; // center
+
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${r.ticker}</div>
+        <div class="bar-track">
+          <div class="bar-zero" style="left:${zeroPos}%"></div>
+          <div class="bar-fill" style="
+            width:${pct}%;
+            background:${color};
+            box-shadow: 0 0 6px ${color};
+            opacity:0.85;
+            position:absolute;
+            ${isPos ? `left:${zeroPos}%` : `right:${zeroPos}%`};
+            top:0; height:100%;
+          "></div>
+        </div>
+        <div class="bar-val" style="color:${color}">${isPos?'+':''}${fmt(gap,2)}%</div>
+      </div>`;
+  }).join('');
+}
+
+// ─── HISTORY ──────────────────────────────────────────────────────────────
+function saveToHistory() {
+  if (rows.length === 0) { return; }
+  const ccl = getCCL();
+  const threshold = getThreshold();
+  const snapshot = {
+    ts: new Date().toLocaleString('es-AR'),
+    ccl,
+    items: rows.map(r => {
+      const { gap } = calcRow(r, ccl);
+      return { ticker: r.ticker, gap, adr: r.adr, local: r.local };
+    })
+  };
+  history.unshift(snapshot);
+  if (history.length > 20) history = history.slice(0, 20);
+  localStorage.setItem('cclHistory', JSON.stringify(history));
+  renderHistory();
+  // Visual feedback
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '✓ GUARDADO';
+  btn.style.color = 'var(--accent3)';
+  setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+}
+
+function clearHistory() {
+  history = [];
+  localStorage.removeItem('cclHistory');
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (history.length === 0) {
+    list.innerHTML = '<div class="history-empty">— GUARDÁ UN SNAPSHOT PARA VER EL HISTORIAL —</div>';
+    return;
+  }
+  list.innerHTML = history.map((snap, i) => `
+    <div class="history-entry">
+      <div>
+        <div class="history-ts">${snap.ts}</div>
+        <div class="history-ccl">CCL: ${fmt(snap.ccl, 2)}</div>
+      </div>
+      <div>
+        <div class="history-items">
+          ${snap.items.map(item => {
+            const cls = item.gap === null ? '' : item.gap > 2 ? 'chip-sell' : item.gap < -2 ? 'chip-buy' : '';
+            const gapStr = item.gap !== null ? ` ${item.gap > 0 ? '+' : ''}${fmt(item.gap,1)}%` : '';
+            return `<span class="history-chip ${cls}">${item.ticker}${gapStr}</span>`;
+          }).join('')}
+        </div>
+      </div>
+      <button class="history-clear-btn" onclick="deleteHistoryEntry(${i})">✕</button>
+    </div>`).join('');
+}
+
+function deleteHistoryEntry(i) {
+  history.splice(i, 1);
+  localStorage.setItem('cclHistory', JSON.stringify(history));
+  renderHistory();
+}
+
+// ─── CSV EXPORT ───────────────────────────────────────────────────────────
+function exportCSV() {
+  if (rows.length === 0) return;
+  const ccl = getCCL();
+  const threshold = getThreshold();
+  const headers = ['Ticker','Nombre','Sector','ADR USD','Ratio','Local ARS','Teorico ARS','Gap %','CCL Implicito','Señal'];
+  const lines = [headers.join(',')];
+  rows.forEach(r => {
+    const { teorico, cclImpl, gap } = calcRow(r, ccl);
+    const signal = gap === null ? '' : gap > threshold ? 'CARA' : gap < -threshold ? 'BARATA' : 'PARIDAD';
+    lines.push([
+      r.ticker,
+      `"${r.name || ''}"`,
+      r.sector || '',
+      r.adr || '',
+      r.ratio,
+      r.local || '',
+      teorico ? teorico.toFixed(2) : '',
+      gap !== null ? gap.toFixed(2) : '',
+      cclImpl ? cclImpl.toFixed(2) : '',
+      signal
+    ].join(','));
+  });
+  lines.push('');
+  lines.push(`CCL Utilizado,${ccl}`);
+  lines.push(`Fecha,${new Date().toLocaleString('es-AR')}`);
+
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ccl_radar_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function toggleAddForm() {
+  document.getElementById('addForm').classList.toggle('open');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+rows.push({ id: nextId++, ticker:'GGAL', name:'Grupo Galicia', adr:44.74, ratio:10, local:6350, sector:'BANCO' });
+renderHistory();
+recalcAll();
+</script>
+</body>
+</html>
